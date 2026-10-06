@@ -1,0 +1,103 @@
+{
+  "name": "Google OAuth and Token Broker for Odoo",
+  "nodes": [
+    {
+      "parameters": {"httpMethod": "GET", "path": "google-callback", "responseMode": "responseNode", "options": {}},
+      "id": "a0110001-0001-4000-8000-000000000001",
+      "name": "Google OAuth Callback",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 100],
+      "webhookId": "google-callback"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oauth2.googleapis.com/token",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/x-www-form-urlencoded"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "code", "value": "={{ $('Google OAuth Callback').first().json.query.code }}"},
+          {"name": "client_id", "value": "220160292834-8ita420bi6o33trtu1fs4qvagqgojk07.apps.googleusercontent.com"},
+          {"name": "client_secret", "value": "={{ $env.GOOGLE_OAUTH_CLIENT_SECRET }}"},
+          {"name": "redirect_uri", "value": "https://solution.ecube.pk/webhook/google-callback"},
+          {"name": "grant_type", "value": "authorization_code"}
+        ]},
+        "options": {}
+      },
+      "id": "a0110001-0002-4000-8000-000000000002",
+      "name": "Exchange Authorization Code",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-360, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "const query = $('Google OAuth Callback').first().json.query || {};\nif (!query.state) throw new Error('Missing OAuth state');\nconst tokens = $input.first().json;\nif (!tokens.refresh_token) throw new Error('Google did not return a refresh token; revoke app access and authorize again with consent');\nconst state = JSON.parse(Buffer.from(query.state, 'base64url').toString('utf8'));\nconst raw = state.return_url || '';\nconst match = raw.match(/^(https?):\\/\\/([^/?#]+)(\\/[^?#]*)?$/i);\nif (!match || match[2].includes('@') || (match[3] || '/') !== '/google_reviews/oauth/callback') throw new Error('Invalid Odoo callback URL');\nconst protocol = match[1].toLowerCase();\nconst hostname = match[2].split(':')[0].toLowerCase();\nif (protocol !== 'https' && !(protocol === 'http' && ['localhost', '127.0.0.1'].includes(hostname))) throw new Error('Odoo callback must use HTTPS (HTTP allowed only for local testing)');\nconst fragment = 'state=' + encodeURIComponent(query.state) + '&refresh_token=' + encodeURIComponent(tokens.refresh_token) + '&access_token=' + encodeURIComponent(tokens.access_token || '') + '&expires_in=' + encodeURIComponent(String(tokens.expires_in || 3600));\nreturn [{json: {redirect_url: raw + '#' + fragment}}];"
+      },
+      "id": "a0110001-0003-4000-8000-000000000003",
+      "name": "Return Token to Odoo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-120, 100]
+    },
+    {
+      "parameters": {"respondWith": "redirect", "redirectURL": "={{ $json.redirect_url }}", "options": {}},
+      "id": "a0110001-0004-4000-8000-000000000004",
+      "name": "Redirect to Odoo",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [120, 100]
+    },
+    {
+      "parameters": {"httpMethod": "POST", "path": "google-token-refresh", "responseMode": "responseNode", "options": {}},
+      "id": "a0110001-0005-4000-8000-000000000005",
+      "name": "Odoo Token Refresh",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 420],
+      "webhookId": "google-token-refresh"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oauth2.googleapis.com/token",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/x-www-form-urlencoded"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "client_id", "value": "220160292834-8ita420bi6o33trtu1fs4qvagqgojk07.apps.googleusercontent.com"},
+          {"name": "client_secret", "value": "={{ $env.GOOGLE_OAUTH_CLIENT_SECRET }}"},
+          {"name": "refresh_token", "value": "={{ $('Odoo Token Refresh').first().json.body.refresh_token }}"},
+          {"name": "grant_type", "value": "refresh_token"}
+        ]},
+        "options": {}
+      },
+      "id": "a0110001-0006-4000-8000-000000000006",
+      "name": "Exchange Refresh Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-360, 420]
+    },
+    {
+      "parameters": {"respondWith": "json", "responseBody": "={{ JSON.stringify($json) }}", "options": {}},
+      "id": "a0110001-0007-4000-8000-000000000007",
+      "name": "Return Access Token to Odoo",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-120, 420]
+    }
+  ],
+  "connections": {
+    "Google OAuth Callback": {"main": [[{"node": "Exchange Authorization Code", "type": "main", "index": 0}]]},
+    "Exchange Authorization Code": {"main": [[{"node": "Return Token to Odoo", "type": "main", "index": 0}]]},
+    "Return Token to Odoo": {"main": [[{"node": "Redirect to Odoo", "type": "main", "index": 0}]]},
+    "Odoo Token Refresh": {"main": [[{"node": "Exchange Refresh Token", "type": "main", "index": 0}]]},
+    "Exchange Refresh Token": {"main": [[{"node": "Return Access Token to Odoo", "type": "main", "index": 0}]]}
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1", "saveDataSuccessExecution": "none"},
+  "versionId": "a0110001-0008-4000-8000-000000000008",
+  "meta": {}
+}

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="google_reviews.Dashboard">
+        <div class="o_google_reviews_dashboard">
+            <div class="o_gr_hero">
+                <div>
+                    <div class="o_gr_eyebrow">GOOGLE BUSINESS PROFILE</div>
+                    <h1>Reputation &amp; performance</h1>
+                    <p>Reviews, customer sentiment and profile activity in one place.</p>
+                </div>
+                <div class="o_gr_controls">
+                    <select class="form-select" t-on-change="setDays" t-att-value="state.days">
+                        <option value="30">Last 30 days</option>
+                        <option value="60">Last 60 days</option>
+                        <option value="90">Last 90 days</option>
+                    </select>
+                    <select class="form-select" t-on-change="setLocation">
+                        <option value="all">All locations</option>
+                        <option t-foreach="locationOptions" t-as="location" t-key="location.connection_id + ':' + location.location_id" t-att-value="location.connection_id + ':' + location.location_id">
+                            <t t-esc="location.name"/>
+                        </option>
+                    </select>
+                    <button class="btn btn-primary" t-on-click="syncPerformance" t-att-disabled="state.syncing || !state.data?.location_count">
+                        <i class="fa fa-refresh me-1" t-att-class="{'fa-spin': state.syncing}"/> Update performance
+                    </button>
+                </div>
+            </div>
+
+            <div t-if="state.loading &amp;&amp; !state.data" class="o_gr_loading"><i class="fa fa-circle-o-notch fa-spin me-2"/>Loading your dashboard…</div>
+            <t t-elif="state.data">
+                <div t-if="state.syncing" class="o_gr_sync_progress"><i class="fa fa-refresh fa-spin me-2"/><t t-esc="state.syncProgress"/></div>
+                <div class="o_gr_kpis">
+                    <div class="o_gr_kpi"><span class="o_gr_icon mint"><i class="fa fa-map-marker"/></span><strong t-esc="state.data.location_count"/><small>Connected locations</small></div>
+                    <div class="o_gr_kpi"><span class="o_gr_icon gold"><i class="fa fa-star"/></span><strong><t t-esc="state.data.average_rating.toFixed(1)"/><small class="o_gr_suffix"> / 5</small></strong><small>Average rating</small></div>
+                    <div class="o_gr_kpi"><span class="o_gr_icon blue"><i class="fa fa-comments"/></span><strong t-esc="state.data.review_count"/><small>Reviews in <t t-esc="state.days"/> days</small></div>
+                    <button class="o_gr_kpi o_gr_kpi_button" t-on-click="openPending"><span class="o_gr_icon coral"><i class="fa fa-reply"/></span><strong t-esc="state.data.pending_count"/><small>Need a reply</small></button>
+                    <div class="o_gr_kpi"><span class="o_gr_icon coral"><i class="fa fa-thumbs-down"/></span><strong t-esc="state.data.negative_count"/><small>1–2 star reviews</small></div>
+                    <div class="o_gr_kpi"><span class="o_gr_icon teal"><i class="fa fa-globe"/></span><strong t-esc="performance.maps_views || 0"/><small>Maps views</small></div>
+                    <div class="o_gr_kpi"><span class="o_gr_icon teal"><i class="fa fa-search"/></span><strong t-esc="performance.search_views || 0"/><small>Search views</small></div>
+                    <div class="o_gr_kpi"><span class="o_gr_icon mint"><i class="fa fa-hand-pointer-o"/></span><strong t-esc="performance.website_clicks || 0"/><small>Website clicks</small></div>
+                    <div class="o_gr_kpi"><span class="o_gr_icon mint"><i class="fa fa-phone"/></span><strong t-esc="performance.call_clicks || 0"/><small>Calls</small></div>
+                    <div class="o_gr_kpi"><span class="o_gr_icon gold"><i class="fa fa-location-arrow"/></span><strong t-esc="performance.direction_requests || 0"/><small>Direction requests</small></div>
+                </div>
+
+                <div class="o_gr_insights">
+                    <section class="o_gr_panel o_gr_chart_panel o_gr_rating_panel">
+                        <div class="o_gr_panel_heading"><div><h2>Review sentiment</h2><p>Rating distribution for the selected period</p></div><span class="o_gr_chart_badge"><i class="fa fa-star"/> <t t-esc="state.data.review_count"/> reviews</span></div>
+                        <div class="o_gr_rating_chart"><canvas t-ref="ratingChart"/></div>
+                        <div class="o_gr_rating_legend">
+                            <span t-foreach="state.data.rating_distribution" t-as="item" t-key="item.rating"><i t-att-class="'star-' + item.rating"/><strong><t t-esc="item.rating"/> star</strong><small t-esc="item.count"/></span>
+                        </div>
+                    </section>
+                    <section class="o_gr_panel o_gr_chart_panel">
+                        <div class="o_gr_panel_heading"><div><h2>Review momentum</h2><p>New reviews by day · last <t t-esc="state.days"/> days</p></div><span class="o_gr_chart_badge"><i class="fa fa-line-chart"/> <t t-esc="state.data.review_count"/> total</span></div>
+                        <div class="o_gr_large_chart"><canvas t-ref="trendChart"/></div>
+                    </section>
+                </div>
+
+                <section class="o_gr_panel o_gr_map_panel">
+                    <div class="o_gr_panel_heading">
+                        <div><h2>Location footprint</h2><p>Google Business locations with coordinates</p></div>
+                        <button class="btn btn-sm btn-outline-primary" t-on-click="syncMapLocations" t-att-disabled="state.mapSyncing">
+                            <i t-att-class="state.mapSyncing ? 'fa fa-refresh fa-spin me-1' : 'fa fa-map-marker me-1'"/>
+                            <t t-esc="state.mapSyncing ? 'Refreshing locations…' : 'Refresh map locations'"/>
+                        </button>
+                    </div>
+                    <div t-if="mapLocations.length" class="o_gr_map_canvas" t-ref="locationMap"/>
+                    <div t-else="" class="o_gr_map_empty">
+                        <span class="o_gr_icon blue"><i class="fa fa-map-o"/></span>
+                        <div><strong>No coordinates available yet</strong><p>Refresh map locations. Google only returns coordinates for some Business Profiles.</p></div>
+                        <button class="btn btn-sm btn-primary" t-on-click="syncMapLocations" t-att-disabled="state.mapSyncing">Load map data</button>
+                    </div>
+                </section>
+
+                <div class="o_gr_panel o_gr_performance">
+                    <div class="o_gr_panel_heading">
+                        <div><h2>Profile activity</h2><p>Google Search and Maps actions, last <t t-esc="state.days"/> days</p></div>
+                        <span class="o_gr_sync_note"><i class="fa fa-clock-o me-1"/><t t-esc="formatDate(state.data.performance_last_sync)"/></span>
+                    </div>
+                    <t t-if="state.data.performance_series.length">
+                        <div class="o_gr_large_chart o_gr_performance_chart"><canvas t-ref="performanceChart"/></div>
+                    </t>
+                    <div t-else="" class="o_gr_empty"><i class="fa fa-line-chart"/><span>Performance metrics are ready to load.</span><button class="btn btn-sm btn-outline-primary" t-on-click="syncPerformance" t-att-disabled="state.syncing">Fetch Google performance data</button></div>
+                </div>
+
+                <div class="o_gr_columns">
+                    <section class="o_gr_panel">
+                        <div class="o_gr_panel_heading"><div><h2>Review inbox</h2><p>Find feedback and respond quickly</p></div><button class="btn btn-sm btn-link" t-on-click="() => openReviews(reviewFilterDomain)">Open inbox <i class="fa fa-arrow-right ms-1"/></button></div>
+                        <div class="o_gr_inbox_tools">
+                            <input class="form-control" type="search" placeholder="Search name, location, or review…" t-on-input="setReviewSearch"/>
+                            <div class="o_gr_filter_pills">
+                                <button t-att-class="reviewFilter === 'all' ? 'active' : ''" t-on-click="() => setReviewFilter('all')">All</button>
+                                <button t-att-class="reviewFilter === 'pending' ? 'active' : ''" t-on-click="() => setReviewFilter('pending')">Needs reply</button>
+                                <button t-att-class="reviewFilter === 'written' ? 'active' : ''" t-on-click="() => setReviewFilter('written')">Written</button>
+                                <button t-att-class="reviewFilter === 'rating' ? 'active' : ''" t-on-click="() => setReviewFilter('rating')">Rating only</button>
+                            </div>
+                        </div>
+                        <div t-if="recentReviews.length" class="o_gr_reviews">
+                            <article t-foreach="recentReviews" t-as="review" t-key="review.id" class="o_gr_review">
+                                <div class="o_gr_review_avatar">
+                                    <img t-if="review.reviewer_photo_url" t-att-src="review.reviewer_photo_url" t-att-alt="review.reviewer_name || 'Google reviewer'" loading="lazy" referrerpolicy="no-referrer"/>
+                                    <span t-else="" t-esc="(review.reviewer_name || 'G').slice(0, 1).toUpperCase()"/>
+                                </div>
+                                <div class="o_gr_review_main"><div class="o_gr_review_top"><strong t-esc="review.reviewer_name || 'Google user'"/><span t-esc="review.location_name"/></div>
+                                    <div class="o_gr_review_rating" t-att-class="ratingClass(review.star_rating)"><t t-esc="review.star_rating"/> <i class="fa fa-star"/></div>
+                                    <p t-esc="review.comment || 'No written comment'"/>
+                                    <small t-if="review.reply" class="text-success"><i class="fa fa-check-circle me-1"/>Replied</small>
+                                    <small t-else="" class="text-warning"><i class="fa fa-reply me-1"/>Needs a reply</small>
+                                </div>
+                                <button t-if="!review.reply" class="btn btn-sm btn-outline-primary" t-on-click="() => openReview(review)">Reply</button>
+                            </article>
+                        </div>
+                        <div t-else="" class="o_gr_empty">No reviews in this date range.</div>
+                    </section>
+
+                    <section class="o_gr_panel">
+                        <div class="o_gr_panel_heading"><div><h2>Locations</h2><p>Sorted by reviews needing attention</p></div></div>
+                        <input class="form-control o_gr_location_search" type="search" placeholder="Search locations…" t-on-input="setLocationSearch"/>
+                        <div t-if="locations.length" class="o_gr_locations">
+                            <article t-foreach="locations.slice(0, 12)" t-as="location" t-key="location.connection_id + ':' + location.location_id" class="o_gr_location">
+                                <div class="o_gr_location_header"><strong t-esc="location.name"/><button class="btn btn-sm btn-link" t-on-click="() => openLocationReviews(location)">Reviews <i class="fa fa-arrow-right ms-1"/></button></div>
+                                <div class="o_gr_location_stats">
+                                    <span t-att-class="ratingClass(location.average)"><i class="fa fa-star"/> <t t-esc="location.average.toFixed(1)"/></span>
+                                    <span><t t-esc="location.reviews"/> reviews</span>
+                                    <span t-if="location.pending" class="o_gr_pill"><t t-esc="location.pending"/> need reply</span>
+                                    <span t-else="" class="o_gr_pill clear">All replied</span>
+                                </div>
+                                <div class="o_gr_location_bar"><span t-att-style="'width:' + metricWidth(location.reviews, locations)"/></div>
+                            </article>
+                        </div>
+                        <div t-else="" class="o_gr_empty">Connect a Google Business Profile to see its locations.</div>
+                    </section>
+                </div>
+
+                <div class="o_gr_status_row">
+                    <div class="o_gr_panel o_gr_status"><span class="o_gr_icon mint"><i class="fa fa-refresh"/></span><div><strong>Reviews synced</strong><small><t t-esc="formatDate(state.data.last_sync)"/></small></div></div>
+                    <div class="o_gr_panel o_gr_status"><span t-att-class="'o_gr_icon ' + (state.data.performance_errors.length ? 'coral' : 'mint')"><i t-att-class="state.data.performance_errors.length ? 'fa fa-exclamation-triangle' : 'fa fa-check'"/></span><div><strong>Performance API</strong><small><t t-esc="state.data.performance_errors.length ? state.data.performance_errors.length + ' location error(s)' : 'No API errors'"/></small></div></div>
+                </div>
+                <div t-if="state.data.performance_errors.length" class="o_gr_api_errors"><strong>Performance API messages</strong><ul><li t-foreach="state.data.performance_errors.slice(0, 5)" t-as="message" t-key="message" t-esc="message"/></ul><small>If Google reports zero quota, enable Business Profile Performance API and request GBP API access in Google Cloud.</small></div>
+                <footer class="o_gr_footer"><span><t t-esc="state.data.connected_accounts"/> Google accounts · <t t-esc="state.data.location_count"/> locations</span><button class="btn btn-sm btn-outline-secondary" t-on-click="load"><i class="fa fa-refresh me-1"/>Refresh dashboard</button></footer>
+            </t>
+        </div>
+    </t>
+</templates>

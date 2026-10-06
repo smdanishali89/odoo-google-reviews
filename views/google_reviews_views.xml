@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="google_reviews_connection_kanban" model="ir.ui.view">
+        <field name="name">google.reviews.connection.kanban</field>
+        <field name="model">google.reviews.connection</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_dashboard" create="true">
+                <field name="name"/><field name="connected"/><field name="review_count"/>
+                <field name="average_rating"/><field name="pending_reply_count"/>
+                <field name="last_sync"/><field name="last_sync_error"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click o_kanban_record p-3">
+                            <h4 class="mb-2"><field name="name"/></h4>
+                            <div class="mb-3"><field name="connected"/></div>
+                            <div class="row text-center g-2 mb-3">
+                                <div class="col-4"><div class="text-muted">Reviews</div><strong><field name="review_count"/></strong></div>
+                                <div class="col-4"><div class="text-muted">Avg rating</div><strong><field name="average_rating"/></strong><span> / 5</span></div>
+                                <div class="col-4"><div class="text-muted">Need reply</div><strong><field name="pending_reply_count"/></strong></div>
+                            </div>
+                            <div class="text-muted small mb-2">Last synced <field name="last_sync"/></div>
+                            <div class="text-warning small mb-2"><field name="last_sync_error"/></div>
+                            <div class="d-flex gap-2">
+                                <button name="action_open_reviews" type="object" class="btn btn-primary btn-sm">View reviews</button>
+                                <button name="action_fetch_business_data" type="object" class="btn btn-outline-secondary btn-sm">Sync now</button>
+                                <button name="action_connect_google" type="object" class="btn btn-outline-primary btn-sm">Connect Google</button>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="google_reviews_connection_list" model="ir.ui.view">
+        <field name="name">google.reviews.connection.list</field>
+        <field name="model">google.reviews.connection</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="connected"/>
+                <field name="review_count" string="Reviews"/>
+                <field name="average_rating" string="Avg. Rating"/>
+                <field name="pending_reply_count" string="Need Reply" sum="Replies needed" decoration-warning="pending_reply_count &gt; 0"/>
+                <field name="google_account_id" groups="base.group_system"/>
+                <field name="location_id" groups="base.group_system"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="google_reviews_connection_form" model="ir.ui.view">
+        <field name="name">google.reviews.connection.form</field>
+        <field name="model">google.reviews.connection</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_connect_google" type="object" string="Authenticate with Google" class="oe_highlight"/>
+                    <button name="action_fetch_business_data" type="object" string="Sync Accounts, Locations &amp; Reviews" invisible="not connected"/>
+                    <field name="connected" widget="boolean" readonly="1"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_reviews" type="object" class="oe_stat_button" icon="fa-star">
+                            <field name="review_count" widget="statinfo" string="Reviews"/>
+                        </button>
+                        <button name="action_open_pending_reviews" type="object" class="oe_stat_button" icon="fa-reply">
+                            <field name="pending_reply_count" widget="statinfo" string="Need Reply"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group string="Business Profile">
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="google_account_id"/>
+                            <field name="location_id"/>
+                            <field name="average_rating" readonly="1"/>
+                            <field name="pending_reply_count" readonly="1"/>
+                            <field name="last_sync" readonly="1"/>
+                            <field name="last_sync_error" readonly="1" invisible="not last_sync_error"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Reviews">
+                            <field name="review_ids">
+                                <list>
+                                    <field name="review_date"/>
+                                    <field name="location_name"/>
+                                    <field name="reviewer_name"/>
+                                    <field name="star_rating"/>
+                                    <field name="comment"/>
+                                    <field name="reply"/>
+                                    <field name="reply_to_send"/>
+                                    <button name="action_open_reply" type="object" string="Reply" icon="fa-reply" invisible="reply or not comment"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="google_business_review_kanban" model="ir.ui.view">
+        <field name="name">google.business.review.kanban</field>
+        <field name="model">google.business.review</field>
+        <field name="arch" type="xml">
+            <kanban default_order="review_date desc">
+                <field name="reviewer_name"/><field name="location_name"/><field name="star_rating"/>
+                <field name="comment"/><field name="review_date"/><field name="reply"/>
+                <field name="connection_id"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click o_kanban_record p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div><strong><field name="reviewer_name"/></strong><div class="text-muted small"><field name="location_name"/></div></div>
+                                <span class="badge text-bg-warning"><field name="star_rating"/> ★</span>
+                            </div>
+                            <div class="text-muted small mb-2"><field name="review_date"/></div>
+                            <p class="mb-3"><field name="comment"/></p>
+                            <div class="mb-2"><strong>Google reply:</strong> <field name="reply"/></div>
+                            <button type="open" class="btn btn-outline-primary btn-sm">Open to reply</button>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="google_business_review_search" model="ir.ui.view">
+        <field name="name">google.business.review.search</field>
+        <field name="model">google.business.review</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="reviewer_name"/><field name="comment"/><field name="location_name"/><field name="connection_id"/>
+                <filter name="needs_reply" string="Needs Reply" domain="[('reply', '=', False)]"/>
+                <filter name="replied" string="Replied" domain="[('reply', '!=', False)]"/>
+                <filter name="with_comment" string="Written Reviews" domain="[('comment', '!=', False)]"/>
+                <filter name="rating_only" string="Rating Only" domain="[('comment', '=', False)]"/>
+                <filter name="low_rating" string="1–2 Stars" domain="[('star_rating', 'in', ['1', '2'])]"/>
+                <separator/>
+                <filter name="group_rating" string="Rating" context="{'group_by': 'star_rating'}"/>
+                <filter name="group_location" string="Location" context="{'group_by': 'location_name'}"/>
+                <filter name="group_connection" string="Google Account" context="{'group_by': 'connection_id'}"/>
+                <filter name="group_month" string="Month" context="{'group_by': 'review_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="google_business_review_graph" model="ir.ui.view">
+        <field name="name">google.business.review.graph</field>
+        <field name="model">google.business.review</field>
+        <field name="arch" type="xml">
+            <graph string="Review volume by rating" type="bar"><field name="star_rating" type="row"/><field name="id" type="measure"/></graph>
+        </field>
+    </record>
+    <record id="google_business_review_pivot" model="ir.ui.view">
+        <field name="name">google.business.review.pivot</field>
+        <field name="model">google.business.review</field>
+        <field name="arch" type="xml">
+            <pivot string="Review trends"><field name="review_date" type="row" interval="month"/><field name="star_rating" type="col"/><field name="id" type="measure"/></pivot>
+        </field>
+    </record>
+
+    <record id="google_business_review_list" model="ir.ui.view">
+        <field name="name">google.business.review.list</field>
+        <field name="model">google.business.review</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="review_date" string="Date" optional="show"/>
+                <field name="reviewer_name" string="Customer"/>
+                <field name="location_name" string="Google location" optional="show"/>
+                <field name="star_rating" string="Rating" widget="badge"
+                       decoration-success="star_rating in ['4', '5']"
+                       decoration-warning="star_rating == '3'"
+                       decoration-danger="star_rating in ['1', '2']"/>
+                <field name="comment" string="Review" class="o_google_review_comment"/>
+                <field name="reply" string="Published reply" optional="hide"/>
+                <field name="connection_id" string="Google account" optional="hide" groups="base.group_system"/>
+                <button name="action_open_reply" type="object" string="Write reply" icon="fa-reply"
+                        class="btn btn-sm btn-outline-primary" invisible="reply or not comment"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="google_business_review_form" model="ir.ui.view">
+        <field name="name">google.business.review.form</field>
+        <field name="model">google.business.review</field>
+        <field name="arch" type="xml">
+            <form class="o_google_review_form">
+                <header>
+                    <button name="action_reply" type="object" string="Publish reply on Google" class="oe_highlight" icon="fa-paper-plane" invisible="not reply_to_send"/>
+                    <field name="reply" invisible="1"/>
+                    <field name="star_rating" widget="badge" readonly="1"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Needs reply" bg_color="text-warning" invisible="reply or not comment"/>
+                    <widget name="web_ribbon" title="Rating only" bg_color="text-info" invisible="comment or reply"/>
+                    <widget name="web_ribbon" title="Replied" bg_color="text-success" invisible="not reply"/>
+                    <div class="oe_title">
+                        <label for="reviewer_name" string="Google review"/>
+                        <h1><field name="reviewer_name" placeholder="Google user"/></h1>
+                        <h3><field name="location_name" placeholder="Google location"/></h3>
+                    </div>
+                    <group>
+                        <group string="Review details">
+                            <field name="star_rating" widget="badge" readonly="1"/>
+                            <field name="review_date" readonly="1"/>
+                            <field name="connection_id" readonly="1"/>
+                        </group>
+                        <group string="Google location">
+                            <field name="location_name" readonly="1"/>
+                            <field name="google_location_id" readonly="1" groups="base.group_system"/>
+                        </group>
+                    </group>
+                    <group string="Customer feedback" class="o_google_review_feedback">
+                        <field name="comment" nolabel="1" readonly="1" placeholder="The customer left a rating without written feedback."/>
+                    </group>
+                    <group string="Published response" invisible="not reply">
+                        <field name="reply" nolabel="1" readonly="1"/>
+                    </group>
+                    <group string="Write a response" invisible="reply or not comment" class="o_google_review_reply">
+                        <field name="reply_to_send" nolabel="1" placeholder="Thank the customer and respond thoughtfully…"/>
+                    </group>
+                    <div class="alert alert-info" role="status" invisible="comment">
+                        This customer left a star rating without written feedback, so a text reply is unavailable.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="google_reviews_connection_action" model="ir.actions.act_window">
+        <field name="name">Google Reviews Dashboard</field>
+        <field name="res_model">google.reviews.connection</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="google_business_review_action" model="ir.actions.act_window">
+        <field name="name">Reviews</field>
+        <field name="res_model">google.business.review</field>
+        <field name="view_mode">graph,pivot,list,form</field>
+    </record>
+    <record id="google_business_written_review_action" model="ir.actions.act_window">
+        <field name="name">Written Reviews</field>
+        <field name="res_model">google.business.review</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('comment', '!=', False)]</field>
+    </record>
+    <record id="google_business_rating_only_action" model="ir.actions.act_window">
+        <field name="name">Rating Only</field>
+        <field name="res_model">google.business.review</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('comment', '=', False)]</field>
+    </record>
+    <record id="google_reviews_dashboard_action" model="ir.actions.client">
+        <field name="name">Google Business Dashboard</field>
+        <field name="tag">google_reviews.dashboard</field>
+    </record>
+
+    <menuitem id="google_reviews_root" name="Google Reviews" sequence="60" groups="base.group_system"/>
+    <menuitem id="google_reviews_dashboard_menu" name="Dashboard" parent="google_reviews_root" action="google_reviews_dashboard_action" sequence="5" groups="base.group_system"/>
+    <menuitem id="google_reviews_connections_menu" name="Connections" parent="google_reviews_root" action="google_reviews_connection_action" sequence="10" groups="base.group_system"/>
+    <menuitem id="google_reviews_reviews_menu" name="All Reviews &amp; Analytics" parent="google_reviews_root" action="google_business_review_action" sequence="20" groups="base.group_system"/>
+    <menuitem id="google_reviews_written_menu" name="Written Reviews" parent="google_reviews_root" action="google_business_written_review_action" sequence="30" groups="base.group_system"/>
+    <menuitem id="google_reviews_rating_only_menu" name="Rating Only" parent="google_reviews_root" action="google_business_rating_only_action" sequence="40" groups="base.group_system"/>
+</odoo>

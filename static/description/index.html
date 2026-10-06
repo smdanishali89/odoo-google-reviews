@@ -1,0 +1,31 @@
+<section class="container">
+  <div class="text-center mb-4">
+    <img src="icon.png" alt="Google Reviews app icon" style="width: 96px; height: 96px;" />
+    <h1 class="mt-3">Google Reviews for Odoo 19</h1>
+    <p class="lead">Connect a Google Business Profile and manage customer reviews from your Odoo backend.</p>
+  </div>
+
+  <h2>Review management</h2>
+  <p>Synchronize locations and reviews, see ratings and feedback in Odoo, identify reviews that need a response, and publish replies from the review form.</p>
+
+  <h2>Dashboard and performance</h2>
+  <p>Review rating and volume summaries, filter by date range and location, inspect review trends, and view available Google Business Profile performance metrics. A location map is available when Google provides coordinates.</p>
+
+  <h2>App screenshots</h2>
+  <p>These screenshots show the Odoo interface with fictional sample review data.</p>
+  <p><img src="main_screenshot.png" alt="Google Reviews dashboard with rating and performance charts" class="img-fluid" /></p>
+  <p><img src="reviews_screenshot.png" alt="Review inbox with reply status and Google locations" class="img-fluid" /></p>
+
+  <h2>Setup requirements</h2>
+  <ul>
+    <li>Odoo 19.0</li>
+    <li>A Google account with access to a Business Profile</li>
+    <li>Google Business Profile API access configured for the integration</li>
+    <li>An active HTTPS OAuth callback and token service</li>
+  </ul>
+  <p>This release uses the eCube OAuth callback and token service at <code>solution.ecube.pk</code>. The service handles Google's OAuth callback and token exchange; the Odoo connection stores its refresh token in the Odoo database. Installing the addon does not install this service. Google connection and refresh therefore depend on the service being available.</p>
+
+  <h2>Privacy and security</h2>
+  <p>Google account tokens and synchronized Business Profile data are stored in the connected Odoo database. Access to Odoo records should be limited to authorized users, and database backups should be protected. Before production use, configure the Google OAuth consent screen to show the publisher's privacy policy.</p>
+  <p>Support: <a href="mailto:faheem.riaz@wags.sa">faheem.riaz@wags.sa</a></p>
+</section>

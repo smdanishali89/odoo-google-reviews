@@ -1,0 +1,37 @@
+{
+    "name": "Google Reviews",
+    "version": "19.0.3.0.0",
+    "author": "eCube",
+    "support": "faheem.riaz@wags.sa",
+    "price": 100.0,
+    "currency": "USD",
+    "images": [
+        "static/description/main_screenshot.png",
+        "static/description/reviews_screenshot.png",
+    ],
+    "category": "Marketing",
+    "summary": "Connect Google Business Profile and manage reviews",
+    "license": "LGPL-3",
+    "depends": ["base", "web"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/google_reviews_views.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "google_reviews/static/lib/leaflet/leaflet.css",
+            "google_reviews/static/lib/leaflet-markercluster/MarkerCluster.css",
+            "google_reviews/static/lib/leaflet-markercluster/MarkerCluster.Default.css",
+            "google_reviews/static/src/js/oauth_popup.js",
+            "google_reviews/static/src/xml/oauth_popup.xml",
+            "google_reviews/static/lib/leaflet/leaflet.js",
+            "google_reviews/static/lib/leaflet-markercluster/leaflet.markercluster.js",
+            "google_reviews/static/lib/chart/chart.umd.min.js",
+            "google_reviews/static/src/js/dashboard.js",
+            "google_reviews/static/src/xml/dashboard.xml",
+            "google_reviews/static/src/scss/dashboard.scss",
+        ],
+    },
+    "application": True,
+    "installable": True,
+}

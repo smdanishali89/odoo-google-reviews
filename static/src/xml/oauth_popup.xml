@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="google_reviews.OAuthPopup">
+        <div class="o_google_reviews_oauth p-4">
+            <h2>Connect Google Business Profile</h2>
+            <p>Google sign-in opens in a separate window. After approval, n8n returns the authorization code to Odoo, which saves the refresh token.</p>
+            <button type="button" class="btn btn-primary" t-on-click="connect">Continue to Google</button>
+        </div>
+    </t>
+</templates>
