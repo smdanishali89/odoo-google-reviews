@@ -21,7 +21,7 @@ This release is configured to use the eCube OAuth service at `solution.ecube.pk`
 
 Administrators can access the connection records, including stored tokens. Secure Odoo accounts, database access, and backups. Revoke the integration from the Google Account security page when access is no longer needed.
 
-Publisher support: faheem.riaz@wags.sa  
+Publisher support: danish@wags.sa  
 Privacy policy: https://wags.sa/en/policy
 
 Before production release, configure this privacy policy URL in the Google Cloud OAuth consent screen and complete any Google verification required for public users.
